@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UZUNITED — Admin panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2f5fff; --violet:#7c3aed; --magenta:#c026d3; --pink:#ec4899;
+    --ink:#0b0a14; --ink-2:#161421; --ink-line: rgba(244,242,239,.12);
+    --paper:#f6f4f1; --paper-line:#e7e2d8;
+    --text-dark:#1c1a24; --text-light:#f4f2ef;
+    --muted-dark:#8f8ba3; --muted-light:#6a6577;
+    --grad-diag-2: linear-gradient(120deg, var(--blue), var(--violet), var(--magenta), var(--pink));
+    --radius-lg:22px; --radius-md:16px; --radius-sm:10px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+    --ok:#1c9a5b; --err:#d3352f;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0; font-family:var(--font-body); background:var(--paper); color:var(--text-dark); -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:var(--font-display); margin:0;}
+  button{font-family:inherit; cursor:pointer;}
+  input,textarea{font-family:inherit; font-size:14px;}
+  .hidden{display:none !important;}
+
+  /* ---------- Login screen ---------- */
+  #loginScreen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--ink); position:relative; overflow:hidden; padding:20px;
+  }
+  #loginScreen::before{
+    content:""; position:absolute; inset:-20%; z-index:0;
+    background:
+      radial-gradient(35% 45% at 20% 25%, rgba(47,95,255,.45), transparent 70%),
+      radial-gradient(40% 50% at 80% 20%, rgba(236,72,153,.4), transparent 70%),
+      radial-gradient(45% 50% at 50% 85%, rgba(124,58,237,.35), transparent 70%);
+    filter:blur(70px);
+  }
+  .login-card{
+    position:relative; z-index:1; width:100%; max-width:380px;
+    background:var(--ink-2); border:1px solid var(--ink-line); border-radius:var(--radius-lg);
+    padding:32px 28px; color:var(--text-light);
+  }
+  .login-brand{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+  .login-brand .tile{width:34px; height:34px; border-radius:9px; background:var(--grad-diag-2); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700;}
+  .login-brand span.word{font-family:var(--font-display); font-weight:700; font-size:17px;}
+  .login-card h1{font-size:22px; margin-bottom:6px;}
+  .login-card p.sub{color:var(--muted-dark); font-size:13.5px; margin:0 0 22px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; color:var(--muted-dark); margin-bottom:6px;}
+  .field input{
+    width:100%; padding:11px 13px; border-radius:var(--radius-sm); border:1px solid var(--ink-line);
+    background:rgba(244,242,239,.06); color:var(--text-light); outline:none;
+  }
+  .field input:focus{border-color:var(--violet);}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none;
+    border-radius:999px; font-weight:600; font-size:14px; padding:12px 20px; width:100%;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-grad{background:var(--grad-diag-2); color:#fff;}
+  .btn-ghost{background:transparent; color:var(--text-light); border:1px solid var(--ink-line);}
+  .btn-danger{background:var(--err); color:#fff;}
+  .btn-sm{padding:8px 14px; font-size:12.5px; width:auto;}
+  .msg{margin-top:14px; font-size:13px; padding:9px 12px; border-radius:var(--radius-sm); display:none;}
+  .msg.show{display:block;}
+  .msg.ok{background:rgba(28,154,91,.15); color:#3fd188;}
+  .msg.err{background:rgba(211,53,47,.15); color:#ff8a85;}
+
+  /* ---------- Dashboard shell ---------- */
+  #dashboard{min-height:100vh; display:flex; flex-direction:column;}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--ink); color:var(--text-light); padding:14px 22px; border-bottom:1px solid var(--ink-line);
+  }
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:700;}
+  .topbar .tile{width:28px; height:28px; border-radius:8px; background:var(--grad-diag-2);}
+  .layout{display:flex; flex:1; min-height:0;}
+  nav.sidebar{
+    width:210px; flex-shrink:0; background:#fff; border-right:1px solid var(--paper-line);
+    padding:16px 10px; display:flex; flex-direction:column; gap:4px;
+  }
+  nav.sidebar button{
+    text-align:left; background:none; border:none; padding:11px 14px; border-radius:var(--radius-sm);
+    font-size:14px; font-weight:500; color:var(--muted-light);
+  }
+  nav.sidebar button.active{background:var(--paper); color:var(--text-dark); font-weight:600;}
+  nav.sidebar button:hover{background:var(--paper);}
+  main.content{flex:1; padding:26px 30px; overflow-y:auto;}
+  .panel{display:none; max-width:760px;}
+  .panel.active{display:block;}
+  .panel h2{font-size:21px; margin-bottom:4px;}
+  .panel p.hint{color:var(--muted-light); font-size:13.5px; margin:0 0 20px;}
+
+  .card{background:#fff; border:1px solid var(--paper-line); border-radius:var(--radius-md); padding:20px; margin-bottom:16px;}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:640px){ .grid-2{grid-template-columns:1fr;} .layout{flex-direction:column;} nav.sidebar{width:100%; flex-direction:row; overflow-x:auto;} }
+  .field-light label{display:block; font-size:12.5px; color:var(--muted-light); margin-bottom:6px; font-weight:500;}
+  .field-light input, .field-light textarea{
+    width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--paper-line);
+    background:#fff; color:var(--text-dark); outline:none; margin-bottom:12px;
+  }
+  .field-light input:focus, .field-light textarea:focus{border-color:var(--violet);}
+  .field-light textarea{resize:vertical; min-height:70px;}
+
+  .list-item{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    padding:13px 0; border-bottom:1px solid var(--paper-line);
+  }
+  .list-item:last-child{border-bottom:none;}
+  .list-item .meta strong{display:block; font-size:14.5px;}
+  .list-item .meta span{display:block; font-size:12.5px; color:var(--muted-light); margin-top:2px;}
+  .list-item img{width:64px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;}
+  .row-flex{display:flex; align-items:center;}
+  .tag{
+    display:inline-block; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; background:var(--paper); color:var(--muted-light); margin-top:4px;
+  }
+  .empty{color:var(--muted-light); font-size:13.5px; padding:14px 0;}
+  .current-logo{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
+  .current-logo img{width:56px; height:56px; object-fit:contain; border-radius:12px; border:1px solid var(--paper-line); background:var(--paper);}
+</style>
+</head>
+<body>
+
+<!-- ============== LOGIN SCREEN ============== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="tile">U</div>
+      <span class="word">UZUNITED</span>
+    </div>
+    <h1>Admin panel</h1>
+    <p class="sub">Saytni boshqarish uchun tizimga kiring.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginUsername">Login</label>
+        <input id="loginUsername" name="username" type="text" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Parol</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-grad" type="submit">Kirish</button>
+    </form>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- ============== DASHBOARD ============== -->
+<div id="dashboard" class="hidden">
+  <div class="topbar">
+    <div class="brand"><div class="tile"></div> UZUNITED · Admin</div>
+    <button class="btn btn-ghost btn-sm" id="btnLogout">Chiqish</button>
+  </div>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <button data-tab="settings" class="active">Sozlamalar</button>
+      <button data-tab="logo">Logotip</button>
+      <button data-tab="banners">Bannerlar</button>
+      <button data-tab="files">Fayllar</button>
+      <button data-tab="services">Xizmatlar</button>
+      <button data-tab="orders">Buyurtmalar</button>
+    </nav>
+    <main class="content">
+
+      <!-- SOZLAMALAR -->
+      <section class="panel active" id="panel-settings">
+        <h2>Sayt sozlamalari</h2>
+        <p class="hint">Kompaniya nomi, tavsif va footer matnini shu yerdan boshqaring.</p>
+        <div class="card field-light">
+          <label for="s_companyName">Kompaniya nomi</label>
+          <input id="s_companyName" type="text">
+          <label for="s_description">Sayt tavsifi (SEO)</label>
+          <textarea id="s_description"></textarea>
+          <label for="s_footerText">Footer matni</label>
+          <textarea id="s_footerText"></textarea>
+          <label for="s_heroUrl">Bosh sahifa fon rasmi (URL, ixtiyoriy)</label>
+          <input id="s_heroUrl" type="text" placeholder="https://...">
+          <button class="btn btn-grad btn-sm" id="btnSaveSettings" style="margin-top:6px;">Saqlash</button>
+        </div>
+        <div class="msg" id="settingsMsg"></div>
+      </section>
+
+      <!-- LOGOTIP -->
+      <section class="panel" id="panel-logo">
+        <h2>Logotip</h2>
+        <p class="hint">Yangi logotip yuklang — eski logotip avtomatik almashtiriladi.</p>
+        <div class="card">
+          <div class="current-logo">
+            <img id="currentLogoImg" src="" alt="Logotip" style="display:none;">
+            <span id="noLogoText" class="empty">Hozircha logotip yuklanmagan.</span>
+          </div>
+          <input type="file" id="logoFile" accept="image/*">
+          <br><br>
+          <button class="btn btn-grad btn-sm" id="btnUploadLogo">Yuklash</button>
+        </div>
+        <div class="msg" id="logoMsg"></div>
+      </section>
+
+      <!-- BANNERLAR -->
+      <section class="panel" id="panel-banners">
+        <h2>Bannerlar</h2>
+        <p class="hint">Bosh sahifadagi reklama bannerlarini qo'shing yoki o'chiring.</p>
+        <div class="card field-light">
+          <label for="b_title">Sarlavha</label>
+          <input id="b_title" type="text" placeholder="Masalan: UzMyShop">
+          <label for="b_description">Tavsif</label>
+          <textarea id="b_description"></textarea>
+          <label for="b_link">Havola (URL)</label>
+          <input id="b_link" type="text" placeholder="https://...">
+          <label for="b_file">Rasm (ixtiyoriy)</label>
+          <input id="b_file" type="file" accept="image/*" style="margin-bottom:12px;">
+          <button class="btn btn-grad btn-sm" id="btnAddBanner">Qo'shish</button>
+        </div>
+        <div class="card" id="bannersList"></div>
+        <div class="msg" id="bannersMsg"></div>
+      </section>
+
+      <!-- FAYLLAR -->
+      <section class="panel" id="panel-files">
+        <h2>Yuklab olinadigan fayllar</h2>
+        <p class="hint">Ilova/hujjat fayllarini qo'shing: nomi, tavsifi va fayl (yoki tayyor URL).</p>
+        <div class="card field-light">
+          <label for="f_name">Fayl nomi</label>
+          <input id="f_name" type="text" placeholder="Masalan: UzMyShop.apk">
+          <label for="f_description">Tavsif</label>
+          <textarea id="f_description"></textarea>
+          <label for="f_file">Faylni tanlang</label>
+          <input id="f_file" type="file" style="margin-bottom:8px;">
+          <label for="f_url">— yoki tayyor URL kiriting</label>
+          <input id="f_url" type="text" placeholder="https://...">
+          <button class="btn btn-grad btn-sm" id="btnAddFile" style="margin-top:4px;">Qo'shish</button>
+        </div>
+        <div class="card" id="filesList"></div>
+        <div class="msg" id="filesMsg"></div>
+      </section>
+
+      <!-- XIZMATLAR -->
+      <section class="panel" id="panel-services">
+        <h2>Xizmatlar</h2>
+        <p class="hint">Bosh sahifadagi xizmatlar ro'yxatini boshqaring.</p>
+        <div class="card field-light">
+          <label for="sv_title">Xizmat nomi</label>
+          <input id="sv_title" type="text" placeholder="Masalan: Mobil ilova yaratish">
+          <label for="sv_description">Tavsif</label>
+          <textarea id="sv_description"></textarea>
+          <button class="btn btn-grad btn-sm" id="btnAddService">Qo'shish</button>
+        </div>
+        <div class="card" id="servicesList"></div>
+        <div class="msg" id="servicesMsg"></div>
+      </section>
+
+      <!-- BUYURTMALAR -->
+      <section class="panel" id="panel-orders">
+        <h2>Buyurtmalar</h2>
+        <p class="hint">Mijozlardan kelgan so'rovlar ro'yxati.</p>
+        <div class="card" id="ordersList"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const API_BASE_URL = "";
+  const TOKEN_KEY = "uzunited_admin_token";
+
+  function getToken(){ return localStorage.getItem(TOKEN_KEY); }
+  function setToken(t){ localStorage.setItem(TOKEN_KEY, t); }
+  function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
+
+  function authHeaders(extra){
+    const h = Object.assign({}, extra || {});
+    const t = getToken();
+    if (t) h["Authorization"] = "Bearer " + t;
+    return h;
+  }
+
+  function showMsg(el, text, ok){
+    el.textContent = text;
+    el.classList.remove("ok","err");
+    el.classList.add("show", ok ? "ok" : "err");
+    setTimeout(function(){ el.classList.remove("show"); }, 4000);
+  }
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str == null ? "" : String(str);
+    return d.innerHTML;
+  }
+
+  // ---------------- Auth flow ----------------
+  const loginScreen = document.getElementById("loginScreen");
+  const dashboard = document.getElementById("dashboard");
+
+  function showDashboard(){
+    loginScreen.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+    loadAllData();
+  }
+  function showLogin(){
+    clearToken();
+    dashboard.classList.add("hidden");
+    loginScreen.classList.remove("hidden");
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    const msgEl = document.getElementById("loginMsg");
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    try{
+      const res = await fetch(API_BASE_URL + "/api/login", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.ok){
+        setToken(data.token);
+        showDashboard();
+      } else {
+        showMsg(msgEl, data.error || "Kirishda xatolik.", false);
+      }
+    } catch(err){
+      showMsg(msgEl, "Serverga ulanib bo'lmadi.", false);
+    }
+  });
+
+  document.getElementById("btnLogout").addEventListener("click", showLogin);
+
+  // Har bir himoyalangan so'rovdan keyin 401 kelsa — avtomatik logout
+  async function authFetch(url, options){
+    const res = await fetch(url, options);
+    if (res.status === 401){
+      showLogin();
+      throw new Error("Sessiya tugadi, qayta kiring.");
+    }
+    return res;
+  }
+
+  // ---------------- Tabs ----------------
+  document.querySelectorAll("#sidebar button").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("#sidebar button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  function loadAllData(){
+    loadSettings();
+    loadLogo();
+    loadBanners();
+    loadFiles();
+    loadServices();
+    loadOrders();
+  }
+
+  // ---------------- Sozlamalar ----------------
+  async function loadSettings(){
+    try{
+      const res = await fetch(API_BASE_URL + "/api/site-settings");
+      const data = await res.json();
+      if (data.ok){
+        document.getElementById("s_companyName").value = data.settings.companyName || "";
+        document.getElementById("s_description").value = data.settings.description || "";
+        document.getElementById("s_footerText").value = data.settings.footerText || "";
+        document.getElementById("s_heroUrl").value = data.settings.heroUrl || "";
+      }
+    } catch(err){ /* jim */ }
+  }
+  document.getElementById("btnSaveSettings").addEventListener("click", async function(){
+    const msgEl = document.getElementById("settingsMsg");
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/site-settings", {
+        method:"PUT",
+        headers: authHeaders({ "Content-Type":"application/json" }),
+        body: JSON.stringify({
+          companyName: document.getElementById("s_companyName").value,
+          description: document.getElementById("s_description").value,
+          footerText: document.getElementById("s_footerText").value,
+          heroUrl: document.getElementById("s_heroUrl").value
+        })
+      });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "Saqlandi." : (data.error || "Xatolik."), data.ok);
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  });
+
+  // ---------------- Logotip ----------------
+  async function loadLogo(){
+    try{
+      const res = await fetch(API_BASE_URL + "/api/logo");
+      const data = await res.json();
+      const img = document.getElementById("currentLogoImg");
+      const noText = document.getElementById("noLogoText");
+      if (data.ok && data.logo && data.logo.url){
+        img.src = data.logo.url;
+        img.style.display = "block";
+        noText.style.display = "none";
+      } else {
+        img.style.display = "none";
+        noText.style.display = "inline";
+      }
+    } catch(err){ /* jim */ }
+  }
+  document.getElementById("btnUploadLogo").addEventListener("click", async function(){
+    const msgEl = document.getElementById("logoMsg");
+    const fileInput = document.getElementById("logoFile");
+    if (!fileInput.files.length){ showMsg(msgEl, "Avval rasm tanlang.", false); return; }
+    const fd = new FormData();
+    fd.append("file", fileInput.files[0]);
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/logo", {
+        method:"POST", headers: authHeaders(), body: fd
+      });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "Logotip yangilandi." : (data.error || "Xatolik."), data.ok);
+      if (data.ok) loadLogo();
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  });
+
+  // ---------------- Bannerlar ----------------
+  async function loadBanners(){
+    const list = document.getElementById("bannersList");
+    try{
+      const res = await fetch(API_BASE_URL + "/api/banners");
+      const data = await res.json();
+      const banners = (data.ok && data.banners) || [];
+      if (!banners.length){ list.innerHTML = '<p class="empty">Hozircha banner yo\'q.</p>'; return; }
+      list.innerHTML = "";
+      banners.forEach(function(b){
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.innerHTML =
+          '<div class="row-flex">' +
+            (b.image_url ? '<img src="'+escapeHtml(b.image_url)+'">' : '') +
+            '<div class="meta"><strong>'+escapeHtml(b.title)+'</strong><span>'+escapeHtml(b.description||"")+'</span></div>' +
+          '</div>' +
+          '<button class="btn btn-danger btn-sm" data-id="'+b.id+'">O\'chirish</button>';
+        row.querySelector("button").addEventListener("click", function(){ deleteBanner(b.id); });
+        list.appendChild(row);
+      });
+    } catch(err){ list.innerHTML = '<p class="empty">Yuklab bo\'lmadi.</p>'; }
+  }
+  document.getElementById("btnAddBanner").addEventListener("click", async function(){
+    const msgEl = document.getElementById("bannersMsg");
+    const fd = new FormData();
+    fd.append("title", document.getElementById("b_title").value);
+    fd.append("description", document.getElementById("b_description").value);
+    fd.append("link_url", document.getElementById("b_link").value);
+    const fileInput = document.getElementById("b_file");
+    if (fileInput.files.length) fd.append("file", fileInput.files[0]);
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/banners", {
+        method:"POST", headers: authHeaders(), body: fd
+      });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "Banner qo'shildi." : (data.error || "Xatolik."), data.ok);
+      if (data.ok){
+        document.getElementById("b_title").value = "";
+        document.getElementById("b_description").value = "";
+        document.getElementById("b_link").value = "";
+        fileInput.value = "";
+        loadBanners();
+      }
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  });
+  async function deleteBanner(id){
+    const msgEl = document.getElementById("bannersMsg");
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/banners/" + id, { method:"DELETE", headers: authHeaders() });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "O'chirildi." : "Xatolik.", data.ok);
+      loadBanners();
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  }
+
+  // ---------------- Fayllar ----------------
+  async function loadFiles(){
+    const list = document.getElementById("filesList");
+    try{
+      const res = await fetch(API_BASE_URL + "/api/files");
+      const data = await res.json();
+      const files = (data.ok && data.files) || [];
+      if (!files.length){ list.innerHTML = '<p class="empty">Hozircha fayl yo\'q.</p>'; return; }
+      list.innerHTML = "";
+      files.forEach(function(f){
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.innerHTML =
+          '<div class="meta"><strong>'+escapeHtml(f.name)+'</strong><span>'+escapeHtml(f.description||"")+'</span><span class="tag">'+escapeHtml(f.url)+'</span></div>' +
+          '<button class="btn btn-danger btn-sm" data-id="'+f.id+'">O\'chirish</button>';
+        row.querySelector("button").addEventListener("click", function(){ deleteFile(f.id); });
+        list.appendChild(row);
+      });
+    } catch(err){ list.innerHTML = '<p class="empty">Yuklab bo\'lmadi.</p>'; }
+  }
+  document.getElementById("btnAddFile").addEventListener("click", async function(){
+    const msgEl = document.getElementById("filesMsg");
+    const fd = new FormData();
+    fd.append("name", document.getElementById("f_name").value);
+    fd.append("description", document.getElementById("f_description").value);
+    const urlVal = document.getElementById("f_url").value.trim();
+    if (urlVal) fd.append("url", urlVal);
+    const fileInput = document.getElementById("f_file");
+    if (fileInput.files.length) fd.append("file", fileInput.files[0]);
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/files", {
+        method:"POST", headers: authHeaders(), body: fd
+      });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "Fayl qo'shildi." : (data.error || "Xatolik."), data.ok);
+      if (data.ok){
+        document.getElementById("f_name").value = "";
+        document.getElementById("f_description").value = "";
+        document.getElementById("f_url").value = "";
+        fileInput.value = "";
+        loadFiles();
+      }
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  });
+  async function deleteFile(id){
+    const msgEl = document.getElementById("filesMsg");
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/files/" + id, { method:"DELETE", headers: authHeaders() });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "O'chirildi." : "Xatolik.", data.ok);
+      loadFiles();
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  }
+
+  // ---------------- Xizmatlar ----------------
+  async function loadServices(){
+    const list = document.getElementById("servicesList");
+    try{
+      const res = await fetch(API_BASE_URL + "/api/services");
+      const data = await res.json();
+      const services = (data.ok && data.services) || [];
+      if (!services.length){ list.innerHTML = '<p class="empty">Hozircha xizmat yo\'q.</p>'; return; }
+      list.innerHTML = "";
+      services.forEach(function(s){
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.innerHTML =
+          '<div class="meta"><strong>'+escapeHtml(s.title)+'</strong><span>'+escapeHtml(s.description||"")+'</span></div>' +
+          '<button class="btn btn-danger btn-sm" data-id="'+s.id+'">O\'chirish</button>';
+        row.querySelector("button").addEventListener("click", function(){ deleteService(s.id); });
+        list.appendChild(row);
+      });
+    } catch(err){ list.innerHTML = '<p class="empty">Yuklab bo\'lmadi.</p>'; }
+  }
+  document.getElementById("btnAddService").addEventListener("click", async function(){
+    const msgEl = document.getElementById("servicesMsg");
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/services", {
+        method:"POST",
+        headers: authHeaders({ "Content-Type":"application/json" }),
+        body: JSON.stringify({
+          title: document.getElementById("sv_title").value,
+          description: document.getElementById("sv_description").value
+        })
+      });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "Xizmat qo'shildi." : (data.error || "Xatolik."), data.ok);
+      if (data.ok){
+        document.getElementById("sv_title").value = "";
+        document.getElementById("sv_description").value = "";
+        loadServices();
+      }
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  });
+  async function deleteService(id){
+    const msgEl = document.getElementById("servicesMsg");
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/services/" + id, { method:"DELETE", headers: authHeaders() });
+      const data = await res.json();
+      showMsg(msgEl, data.ok ? "O'chirildi." : "Xatolik.", data.ok);
+      loadServices();
+    } catch(err){ showMsg(msgEl, err.message, false); }
+  }
+
+  // ---------------- Buyurtmalar ----------------
+  async function loadOrders(){
+    const list = document.getElementById("ordersList");
+    try{
+      const res = await authFetch(API_BASE_URL + "/api/orders", { headers: authHeaders() });
+      const data = await res.json();
+      const orders = (data.ok && data.orders) || [];
+      if (!orders.length){ list.innerHTML = '<p class="empty">Hozircha buyurtma yo\'q.</p>'; return; }
+      list.innerHTML = "";
+      orders.forEach(function(o){
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.innerHTML =
+          '<div class="meta"><strong>'+escapeHtml(o.name)+' — '+escapeHtml(o.service||"")+'</strong>' +
+          '<span>'+escapeHtml(o.contact)+' · '+escapeHtml(o.message||"")+'</span>' +
+          '<span class="tag">'+escapeHtml(o.status)+' · '+escapeHtml((o.created_at||"").slice(0,16).replace("T"," "))+'</span></div>';
+        list.appendChild(row);
+      });
+    } catch(err){ list.innerHTML = '<p class="empty">Yuklab bo\'lmadi.</p>'; }
+  }
+
+  // ---------------- Boshlash ----------------
+  if (getToken()){ showDashboard(); } else { showLogin(); }
+})();
+</script>
+</body>
+</html>
